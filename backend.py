@@ -1,9 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Blueprint, render_template
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='website/templates', static_folder='website/static')
 # Register API blueprint (adds routes under /api/*)
 from routes import bp as api_bp
 app.register_blueprint(api_bp)
+#app.register_blueprint(, url_prefix='/')
+veiws  = Blueprint('veiws',__name__)
+app.register_blueprint(veiws)
+
+
+@app.route('/')
+def home():
+    return render_template("index.html")
 
 @app.route("/get-user/<user_id>") #endpoint to get user information by user_id
 def get_user(user_id):
@@ -29,13 +37,7 @@ def create_user():
     return jsonify(response), 201
 
 
-@app.route("/")
-def home():
-    return "Welcome to the Poolside API!"
 
-@app.route("/button")
-def button_page():
-    return app.send_static_file("button.html")
 
 
 
