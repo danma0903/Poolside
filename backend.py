@@ -3,6 +3,7 @@ import cv2
 import base64
 import threading
 import time
+import torch
 from ultralytics import YOLO
 
 app = Flask(__name__, template_folder='website/templates', static_folder='website/static')
@@ -16,12 +17,17 @@ app.register_blueprint(veiws)
 # Global variables
 video_capture = None
 streaming_active = False
-model = YOLO("video_streaming_backend/yolov8n.pt")  
+if torch.cuda.is_available():
+    model = YOLO("video_streaming_backend/yolov8n.pt").to("cuda")
+    print("✅ YOLO running on GPU")
+else:
+    model = YOLO("video_streaming_backend/yolov8n.pt")
+    print("⚠️  GPU not available, running on CPU")
 
 
 def process_frame(frame):
     """Run YOLO inference on a frame and return the annotated frame"""
-    results = model(frame)
+    results = model(frame, verbose=False)
     annotated = results[0].plot()
     return annotated
 
@@ -29,6 +35,7 @@ def process_frame(frame):
 def get_video_frames():
     """Generator function to yield YOLO-processed frames as JPEG bytes"""
     global video_capture, streaming_active
+    
     
     video_capture = cv2.VideoCapture("video_streaming_backend/data/trimmed_video.mp4")
     streaming_active = True
