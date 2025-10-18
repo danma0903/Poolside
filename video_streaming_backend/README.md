@@ -8,8 +8,7 @@ We want to create out own python virtual environment. To do this run the command
 
 To activate the environment run `source <name of virtual environment>/bin/activate`. 
 
-To load the requirements run `pip install -r requirements.txt` after the environment has been activated. You should see the name of your environment in the shell.
-
+You will have to load the requirements manually. `requirements.txt` is not up to date.
 ## Usage 
 To start the server, make sure you are in the `video_streaming_backend` folder then run  `python3 video_stream_server.py`. To start the client, open a new shell and follow the steps above to create and activate the environment. Then run `python3 video_stream_client.py`. 
 
