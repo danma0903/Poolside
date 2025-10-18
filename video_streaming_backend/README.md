@@ -9,10 +9,9 @@ We want to create out own python virtual environment. To do this run the command
 To activate the environment run `source <name of virtual environment>/bin/activate`. 
 
 You will have to load the requirements manually. `requirements.txt` is not up to date.
-## Usage 
-To start the server, make sure you are in the `video_streaming_backend` folder then run  `python3 video_stream_server.py`. To start the client, open a new shell and follow the steps above to create and activate the environment. Then run `python3 video_stream_client.py`. 
 
-To start the frontend client, make sure you are in the `client/poolside` folder. Then use `npm install` to install all the dependencies. Then to run, use `npx expo start`. A potential error is that the node version might not be right. Also there might be missing dependencies, so use `npm install <dependency>` to install those. 
+## Usage 
+To start the server, make sure you are in the `video_streaming_backend` folder then run  `python3 video_stream_server.py`. To start the client, open a new shell and follow the steps above to create and activate the environment. Then run `python3 video_stream_client.py`.
 
 ## Cleanup
 

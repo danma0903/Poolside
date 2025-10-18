@@ -1,18 +1,25 @@
-import { Text, TextInput, View, StyleSheet } from "react-native";
-import { storeData, getStreamURL } from "@/utils/localStorage";
-import { useEffect, useState } from "react";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Router, useRouter } from "expo-router";
 import {
+	Text,
+	TextInput,
+	View,
+	StyleSheet,
 	NativeSyntheticEvent,
 	TextInputSubmitEditingEventData,
+	Animated,
 } from "react-native";
+import { storeData, getStreamURL } from "@/utils/localStorage";
+import { useEffect, useState, useRef } from "react";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Router, useRouter } from "expo-router";
 
 export default function Index() {
 	const router = useRouter();
 	const [text, setText] = useState<string>();
+	const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
-	//not working
+	//page fade animation values
+	const fadeInAnim = useRef(new Animated.Value(0)).current;
+	// const fadeOutAnim = useRef(new Animated.Value(1)).current;
 	useEffect(() => {
 		const loadPreviousURL = async () => {
 			try {
@@ -25,27 +32,58 @@ export default function Index() {
 				}
 			} catch (e) {
 				console.log(e);
+			} finally {
+				setIsLoaded(true);
 			}
 		};
 		loadPreviousURL();
 	}, []);
 
-	//grab url, if it is null text is undefined.
+	useEffect(() => {
+		if (isLoaded) {
+			Animated.timing(fadeInAnim, {
+				toValue: 1,
+				duration: 1000,
+				useNativeDriver: true,
+			}).start();
+		}
+	}, [isLoaded, fadeInAnim]);
+
+	if (isLoaded) {
+		//grab url, if it is null text is undefined.
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: "center",
+					alignItems: "center",
+					backgroundColor: "#4A4A4A",
+				}}
+			>
+				<Animated.View
+					style={{
+						flex: 1,
+						justifyContent: "center",
+						alignItems: "center",
+						backgroundColor: "#4A4A4A",
+						opacity: fadeInAnim,
+					}}
+				>
+					<TextInput
+						style={styles.inputBox}
+						defaultValue={text}
+						placeholder="type your RTSP/ stream URL"
+						onSubmitEditing={(event) => handleRTSPInput(event, router)}
+					></TextInput>
+				</Animated.View>
+			</View>
+		);
+	}
+
 	return (
-		<View
-			style={{
-				flex: 1,
-				justifyContent: "center",
-				alignItems: "center",
-			}}
-		>
-			<TextInput
-				style={styles.inputBox}
-				placeholder="type your RTSP/ stream URL"
-				onSubmitEditing={(event) => handleRTSPInput(event, router)}
-			></TextInput>
-			{/* <Text>Edit app/index.tsx to edit this screen.</Text> */}
-		</View>
+		<>
+			<Text>Loading...</Text>
+		</>
 	);
 }
 
@@ -53,13 +91,19 @@ const handleRTSPInput = async (
 	event: NativeSyntheticEvent<TextInputSubmitEditingEventData>,
 	router: Router
 ) => {
-	await storeData(event.nativeEvent.text);
-	if (event.nativeEvent.text) router.push("./video-preview");
+	const text = event.nativeEvent.text;
+	await storeData(text);
+	if (text) router.push("./video-preview");
+	//we might want to add here a validator to make sure we actually can establish a connection
+	//before navigating to the next route. We might render an error on the page
+	//if the user input is an invalid stream address
+	//another option is to first route to a loading screen to establisht eh connection and then route
+	//to the video preview
 };
 
 const styles = StyleSheet.create({
 	inputBox: {
-		backgroundColor: "gray",
+		backgroundColor: "#d2d2d2ff",
 		borderColor: "black",
 		borderWidth: 1,
 		borderRadius: 10,
