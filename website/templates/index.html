@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poolside - Video Streaming</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-section {
+            margin: 20px 0;
+        }
+        .video-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #videoStream {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #333;
+            border-radius: 5px;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .info {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .status.active {
+            color: green;
+        }
+        .status.inactive {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    
+<div class="wrapper">
+<div class="container">
+    <h2>Poolside Video Streaming</h2>
+    
+    <div class="video-section">
+        <h3>Video Stream</h3>
+        <div class="video-container">
+            <img id="videoStream" src="/video_stream" alt="Video Stream" style="display: none;">
+            <p id="noVideo">Click "Start Stream" to begin video streaming</p>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startStream()">Start Stream</button>
+            <button id="stopBtn" onclick="stopStream()" disabled>Stop Stream</button>
+            <button onclick="getVideoInfo()">Get Video Info</button>
+        </div>
+        
+        <div class="info">
+            <h4>Video Information</h4>
+            <p>Status: <span id="status" class="status inactive">Inactive</span></p>
+            <p>FPS: <span id="fps">-</span></p>
+            <p>Resolution: <span id="resolution">-</span></p>
+            <p>Duration: <span id="duration">-</span></p>
+        </div>
+    </div>
+    
+    <div class="video-section">
+        <h3>API Endpoints</h3>
+        <ul>
+            <li><strong>GET /video_stream</strong> - Stream video as MJPEG</li>
+            <li><strong>GET /video_info</strong> - Get video stream information</li>
+            <li><strong>GET /stop_video</strong> - Stop the video stream</li>
+        </ul>
+    </div>
+    
+</div>
+</div>
+
+<script>
+    let streamActive = false;
+    
+    function startStream() {
+        const videoImg = document.getElementById('videoStream');
+        const noVideo = document.getElementById('noVideo');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        videoImg.src = '/video_stream';
+        videoImg.style.display = 'block';
+        noVideo.style.display = 'none';
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        streamActive = true;
+        
+        // Update status
+        document.getElementById('status').textContent = 'Active';
+        document.getElementById('status').className = 'status active';
+    }
+    
+    function stopStream() {
+        const videoImg = document.getElementById('videoStream');
+        const noVideo = document.getElementById('noVideo');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        // Stop the stream by changing src
+        videoImg.src = '';
+        videoImg.style.display = 'none';
+        noVideo.style.display = 'block';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        streamActive = false;
+        
+        // Call the stop endpoint
+        fetch('/stop_video')
+            .then(response => response.json())
+            .then(data => console.log(data.message));
+        
+        // Update status
+        document.getElementById('status').textContent = 'Inactive';
+        document.getElementById('status').className = 'status inactive';
+    }
+    
+    function getVideoInfo() {
+        fetch('/video_info')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent = data.status;
+                document.getElementById('status').className = `status ${data.status}`;
+                document.getElementById('fps').textContent = data.fps ? data.fps.toFixed(2) : '-';
+                document.getElementById('resolution').textContent = data.width && data.height ? `${data.width}x${data.height}` : '-';
+                document.getElementById('duration').textContent = data.duration ? data.duration.toFixed(2) + 's' : '-';
+            })
+            .catch(error => {
+                console.error('Error fetching video info:', error);
+                document.getElementById('status').textContent = 'Error';
+                document.getElementById('status').className = 'status inactive';
+            });
+    }
+    
+    // Auto-refresh video info every 5 seconds
+    setInterval(getVideoInfo, 5000);
+</script>
+
+</body>
+</html>
