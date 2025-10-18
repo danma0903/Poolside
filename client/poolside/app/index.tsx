@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { storeData, getStreamURL } from "@/utils/localStorage";
 import { useEffect, useState, useRef } from "react";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+// import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Router, useRouter } from "expo-router";
 
 export default function Index() {
@@ -57,7 +57,7 @@ export default function Index() {
 					flex: 1,
 					justifyContent: "center",
 					alignItems: "center",
-					backgroundColor: "#4A4A4A",
+					backgroundColor: "#90cde4ff",
 				}}
 			>
 				<Animated.View
@@ -65,7 +65,7 @@ export default function Index() {
 						flex: 1,
 						justifyContent: "center",
 						alignItems: "center",
-						backgroundColor: "#4A4A4A",
+						backgroundColor: "#90cde4ff",
 						opacity: fadeInAnim,
 					}}
 				>
