@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Image, StyleSheet, Text } from "react-native";
+import { View, Image, StyleSheet, Text, ImageBackground } from "react-native";
 import AlertBox from "@/components/AlertBox";
 
 export default function VideoPreview() {
@@ -8,6 +8,7 @@ export default function VideoPreview() {
 	useEffect(() => {
 		const ws = new WebSocket("ws://10.113.114.118:8888");
 
+		
 		ws.onopen = () => console.log("✅ WebSocket connected");
 
 		ws.onmessage = (event) => {
@@ -26,25 +27,43 @@ export default function VideoPreview() {
 	}, []);
 
 	return (
-		<>
-			<AlertBox></AlertBox>
-			<View style={styles.container}>
+		<View style={styles.container}>
+			<View style={styles.videoWrapper}>
 				{frameUri ? (
-					<Image
+					<ImageBackground
 						source={{ uri: frameUri }}
 						style={styles.image}
-						resizeMode="contain"
-					/>
+						resizeMode="cover" // fill the container completely
+					>
+						<AlertBox />
+					</ImageBackground>
 				) : (
 					<Text>Waiting for video...</Text>
 				)}
-				<Text>Our Video Component</Text>
 			</View>
-		</>
+		</View>
+
 	);
 }
 
 const styles = StyleSheet.create({
 	container: { flex: 1, alignItems: "center", justifyContent: "center" },
-	image: { width: 300, height: 200 },
+	videoWrapper: {
+		position: "relative",
+		width: 300,
+		height: 200,
+	},
+	image: {
+		width: "100%",
+		height: "100%",
+	},
+	alertOverlay: {
+		position: "absolute",
+		top: 5,
+		left: 5,
+		backgroundColor: "rgba(255,0,0,0.7)",
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 4,
+	},
 });
