@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { View, Image, StyleSheet, Text } from "react-native";
+import AlertBox from "@/components/AlertBox";
 
 export default function VideoPreview() {
 	const [frameUri, setFrameUri] = useState<string | null>(null);
 
 	useEffect(() => {
-		const ws = new WebSocket("ws://localhost:8888");
+		const ws = new WebSocket("ws://10.113.114.118:8888");
 
 		ws.onopen = () => console.log("✅ WebSocket connected");
 
@@ -25,18 +26,21 @@ export default function VideoPreview() {
 	}, []);
 
 	return (
-		<View style={styles.container}>
-			{frameUri ? (
-				<Image
-					source={{ uri: frameUri }}
-					style={styles.image}
-					resizeMode="contain"
-				/>
-			) : (
-				<Text>Waiting for video...</Text>
-			)}
-			<Text>Our Video Component</Text>
-		</View>
+		<>
+			<AlertBox></AlertBox>
+			<View style={styles.container}>
+				{frameUri ? (
+					<Image
+						source={{ uri: frameUri }}
+						style={styles.image}
+						resizeMode="contain"
+					/>
+				) : (
+					<Text>Waiting for video...</Text>
+				)}
+				<Text>Our Video Component</Text>
+			</View>
+		</>
 	);
 }
 

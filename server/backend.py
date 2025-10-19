@@ -2,20 +2,42 @@ from flask import Flask, request, jsonify, Blueprint, render_template, Response
 import cv2
 import base64
 import threading
+from flask_cors import CORS
+from flask_sse import sse
+
 import time
 
 app = Flask(__name__, template_folder='website/templates', static_folder='website/static')
+CORS(app,supports_credentials=True)
+app.config["REDIS_URL"] = "redis://localhost:6379"
+app.register_blueprint(sse, url_prefix='/alert-stream')
+
 # Register API blueprint (adds routes under /api/*)
-from routes import bp as api_bp
-app.register_blueprint(api_bp)
+# from routes import bp as api_bp
+# app.register_blueprint(api_bp)
 #app.register_blueprint(, url_prefix='/')
-veiws  = Blueprint('veiws',__name__)
-app.register_blueprint(veiws)
+# veiws  = Blueprint('veiws',__name__)
+# app.register_blueprint(veiws)
 
 # Global variable to control video streaming
+
 video_capture = None
 streaming_active = False
+@app.route('/test-alert')
+def test_alert():
+    sse.publish({'message':"good"},type='alert')
+    # sse.publish({},type='relieve-alert')
+    return "test-complete"
 
+@app.route('/test-alert-relief')
+def test_alert_relief():
+    sse.publish({'message':"good"},type='relieve-alert')
+    # sse.publish({},type='relieve-alert')
+    return "test-complete"
+
+@app.route('/get-stream-url',methods=['POST','OPTIONS'])
+def get_stream_url():
+    return ("hello")
 def get_video_frames():
     """Generator function to yield video frames as JPEG bytes"""
     global video_capture, streaming_active
@@ -51,28 +73,10 @@ def get_video_frames():
 def home():
     return render_template("index.html")
 
-@app.route("/get-user/<user_id>") #endpoint to get user information by user_id
-def get_user(user_id):
-    user_data = {# mock user data
-        "user_id": user_id,
-        "name": "John Doe",
-        "email": "jdoe@example.com"
-    }
-
-    extra = request.args.get("extra")
-    if extra:
-        user_data["extra"] = extra
-    return jsonify(user_data)
 
 
-@app.route("/create-user", methods=["POST"]) #endpoint to create a new user
-def create_user():
-    user_info = request.get_json()
-    response = { # mock response for user creation
-        "message": "User created successfully",
-        "user": user_info
-    }
-    return jsonify(response), 201
+#@app.route('/alert-stream')
+
 
 @app.route('/video_stream')
 def video_stream():
@@ -124,4 +128,4 @@ def stop_video():
 
 
 if __name__ == "__main__": #if this file is run directly, start the Flask app
-    app.run(debug=True)
+    app.run(host='0.0.0.0',debug=False)

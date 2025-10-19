@@ -3,13 +3,17 @@ import { AppState, Text } from "react-native";
 import EventSource, { EventSourceListener } from "react-native-sse";
 
 type AlertEvent = "alert" | "relieve-alert";
-const es = new EventSource<AlertEvent>("myurlplaceholder");
+const es = new EventSource<AlertEvent>(
+	"http://10.113.114.118:5000/alert-stream"
+);
 export default function AlertBox() {
 	const [alertText, setAlertText] = useState("no alert");
 	useEffect(() => {
 		const alertHandler: EventSourceListener<AlertEvent, "alert"> = (event) => {
 			console.log("alert_received");
+			console.log(event.data);
 			setAlertText("Alert");
+			console.log(alertText);
 		};
 		const relieveAlertHandler: EventSourceListener<
 			AlertEvent,
@@ -18,20 +22,27 @@ export default function AlertBox() {
 			console.log("no alert");
 			setAlertText("no Alert");
 		};
-		const appStateEventSub = AppState.addEventListener("change", (newState) => {
-			if (newState === "active") {
-				es.open();
-				es.addEventListener("alert", alertHandler);
-				es.addEventListener("relieve-alert", relieveAlertHandler);
-			} else if (newState === "background" || newState === "inactive") {
-				es.removeAllEventListeners();
-				es.close();
-			}
-		});
+		es.open();
+		console.log("handlers added");
+		es.addEventListener("alert", alertHandler);
+		es.addEventListener("relieve-alert", relieveAlertHandler);
+		// const appStateEventSub = AppState.addEventListener("change", (newState) => {
+		// 	if (newState === "active") {
+		// 		es.open();
+		// 		console.log("handlers added");
+		// 		es.addEventListener("alert", alertHandler);
+		// 		es.addEventListener("relieve-alert", relieveAlertHandler);
+		// 	} else if (newState === "background" || newState === "inactive") {
+		// 		es.removeAllEventListeners();
+		// 		es.close();
+		// 	}
+		// });
 		return () => {
-			appStateEventSub.remove();
+			es.removeAllEventListeners();
+			es.close();
+			// appStateEventSub.remove();
 		};
-	});
+	}, []);
 	return (
 		<>
 			<Text>{alertText}</Text>

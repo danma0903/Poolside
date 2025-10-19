@@ -92,6 +92,17 @@ const handleRTSPInput = async (
 	router: Router
 ) => {
 	const text = event.nativeEvent.text;
+	const payload = {
+		// mode: "cors",
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ streamURL: text }),
+	};
+	await fetch("http://10.113.114.118:5000/get-stream-url", payload)
+		.then((response) => console.log(response))
+		.catch((error) => console.log(error));
 	await storeData(text);
 	if (text) router.push("./video-preview");
 	//we might want to add here a validator to make sure we actually can establish a connection
