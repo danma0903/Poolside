@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#90cde4ff", // light blue background
+    backgroundColor: "#3c7e98ff", // light blue background
     alignItems: "center",
     justifyContent: "flex-start",
     paddingTop: 40,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#007ACC", // deeper blue for headings
+    color: "#8cd0fdff", // deeper blue for headings
     marginBottom: 20,
   },
   videoContainer: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   waitingText: {
-    color: "#007ACC",
+    color: "#8cd0fdff",
     fontSize: 16,
     fontWeight: "500",
   },
