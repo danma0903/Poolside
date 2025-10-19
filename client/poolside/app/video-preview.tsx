@@ -26,6 +26,7 @@ export default function VideoPreview() {
 		return () => ws.close();
 	}, []);
 
+<<<<<<< HEAD
 	return (
 		<View style={styles.container}>
 			<View style={styles.videoWrapper}>
@@ -66,4 +67,63 @@ const styles = StyleSheet.create({
 		paddingVertical: 4,
 		borderRadius: 4,
 	},
+=======
+  return (
+    <View style={styles.screen}>
+      <AlertBox />
+      <Text style={styles.title}>Poolside Live Feed</Text>
+      <View style={styles.videoContainer}>
+        {frameUri ? (
+          <Image
+            source={{ uri: frameUri }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.waitingText}>Waiting for video...</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#90cde4ff", // light blue background
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#007ACC", // deeper blue for headings
+    marginBottom: 20,
+  },
+  videoContainer: {
+    width: "90%",
+    aspectRatio: 16 / 9,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 15,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 15,
+  },
+  waitingText: {
+    color: "#007ACC",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+>>>>>>> cb881d1 (temporary display for video screen)
 });
