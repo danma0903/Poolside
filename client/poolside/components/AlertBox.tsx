@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { AppState, Text } from "react-native";
+import { AppState, Text, View, StyleSheet } from "react-native";
 import EventSource, { EventSourceListener } from "react-native-sse";
 
 type AlertEvent = "alert" | "relieve-alert";
 const es = new EventSource<AlertEvent>("http://10.0.0.119:5000/alert-stream");
 export default function AlertBox() {
-	const [alertText, setAlertText] = useState("no alert");
+	const [alertText, setAlertText] = useState("No Detection");
 	useEffect(() => {
 		const alertHandler: EventSourceListener<AlertEvent, "alert"> = (event) => {
 			console.log("alert_received");
@@ -17,8 +17,7 @@ export default function AlertBox() {
 			AlertEvent,
 			"relieve-alert"
 		> = (event) => {
-			console.log("no alert");
-			setAlertText("no Alert");
+			setAlertText("No Detection");
 		};
 		es.open();
 		console.log("handlers added");
@@ -42,8 +41,22 @@ export default function AlertBox() {
 		};
 	}, []);
 	return (
-		<>
+		(alertText === "Alert") ?
+		<View style={styles.alertOverlay}>
 			<Text>{alertText}</Text>
-		</>
+		</View> :
+		<></>
 	);
 }
+
+const styles = StyleSheet.create({
+	alertOverlay: {
+		position: "absolute",
+		top: 5,
+		left: 5,
+		backgroundColor: "rgba(255,0,0,0.7)",
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 4,
+	},
+});
