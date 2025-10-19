@@ -65,6 +65,22 @@
         .status.inactive {
             color: red;
         }
+        .alert {
+            background-color: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+        }
+        .person-info {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +91,9 @@
     
     <div class="video-section">
         <h3>Video Stream</h3>
+        <div class="alert" id="detectionAlert">
+            🚨 ALERT: DETECTION THRESHOLDS MET! 🚨
+        </div>
         <div class="video-container">
             <img id="videoStream" src="/video_stream" alt="Video Stream" style="display: none;">
             <p id="noVideo">Click "Start Stream" to begin video streaming</p>
@@ -93,6 +112,22 @@
             <p>Resolution: <span id="resolution">-</span></p>
             <p>Duration: <span id="duration">-</span></p>
         </div>
+        
+        <div class="person-info">
+            <h4>Object Detection</h4>
+            <div id="objectCounts"></div>
+            <p>Alert Status: <span id="alertStatus" class="status inactive">Inactive</span></p>
+            <p>Detection History: <span id="detectionHistory">-</span></p>
+            <button onclick="getDetectionStatus()">Refresh Detection Status</button>
+        </div>
+        
+        <div class="person-info">
+            <h4>Configuration</h4>
+            <p>History Length: <input type="number" id="historyLength" value="30" min="1" max="100"></p>
+            <p>Alert Threshold: <input type="number" id="alertThreshold" value="25" min="1" max="100"></p>
+            <div id="objectConfigs"></div>
+            <button onclick="updateConfig()">Update Configuration</button>
+        </div>
     </div>
     
     <div class="video-section">
@@ -101,6 +136,8 @@
             <li><strong>GET /video_stream</strong> - Stream video as MJPEG</li>
             <li><strong>GET /video_info</strong> - Get video stream information</li>
             <li><strong>GET /stop_video</strong> - Stop the video stream</li>
+            <li><strong>GET /detection_status</strong> - Get object detection status and alerts</li>
+            <li><strong>POST /update_detection_config</strong> - Update detection configuration</li>
         </ul>
     </div>
     
@@ -169,8 +206,132 @@
             });
     }
     
-    // Auto-refresh video info every 5 seconds
+    function getDetectionStatus() {
+        fetch('/detection_status')
+            .then(response => response.json())
+            .then(data => {
+                // Update object counts display
+                const objectCountsDiv = document.getElementById('objectCounts');
+                objectCountsDiv.innerHTML = '';
+                
+                for (const [objName, count] of Object.entries(data.current_counts)) {
+                    const objConfig = data.detection_config.objects_to_track[objName];
+                    const minCount = objConfig ? objConfig.min_count : 0;
+                    const displayName = objConfig ? objConfig.name : objName;
+                    const isThresholdMet = count >= minCount;
+                    
+                    const countDiv = document.createElement('p');
+                    countDiv.innerHTML = `${displayName}: <span style="color: ${isThresholdMet ? 'green' : 'orange'}">${count}</span> (min: ${minCount})`;
+                    objectCountsDiv.appendChild(countDiv);
+                }
+                
+                // Update alert status
+                const alertStatus = document.getElementById('alertStatus');
+                const detectionAlert = document.getElementById('detectionAlert');
+                
+                if (data.alert_active) {
+                    alertStatus.textContent = 'Active';
+                    alertStatus.className = 'status active';
+                    detectionAlert.style.display = 'block';
+                } else {
+                    alertStatus.textContent = 'Inactive';
+                    alertStatus.className = 'status inactive';
+                    detectionAlert.style.display = 'none';
+                }
+                
+                // Show detection history
+                if (data.recent_counts && data.recent_counts.length > 0) {
+                    let historyText = '';
+                    for (const [objName, objConfig] of Object.entries(data.detection_config.objects_to_track)) {
+                        const framesMeeting = data.frames_meeting_thresholds[objName] || 0;
+                        historyText += `${objConfig.name}: ${framesMeeting}/${data.history_length} frames, `;
+                    }
+                    historyText = historyText.slice(0, -2); // Remove last comma
+                    document.getElementById('detectionHistory').textContent = historyText;
+                } else {
+                    document.getElementById('detectionHistory').textContent = 'No data yet';
+                }
+                
+                // Update configuration inputs
+                document.getElementById('historyLength').value = data.detection_config.history_length;
+                document.getElementById('alertThreshold').value = data.detection_config.alert_threshold;
+                
+                // Update object configuration inputs
+                updateObjectConfigInputs(data.detection_config.objects_to_track);
+            })
+            .catch(error => {
+                console.error('Error fetching detection status:', error);
+                document.getElementById('objectCounts').innerHTML = '<p>Error loading data</p>';
+                document.getElementById('alertStatus').textContent = 'Error';
+                document.getElementById('alertStatus').className = 'status inactive';
+            });
+    }
+    
+    function updateObjectConfigInputs(objectsToTrack) {
+        const objectConfigsDiv = document.getElementById('objectConfigs');
+        objectConfigsDiv.innerHTML = '';
+        
+        for (const [objName, objConfig] of Object.entries(objectsToTrack)) {
+            const configDiv = document.createElement('div');
+            configDiv.style.marginBottom = '10px';
+            configDiv.innerHTML = `
+                <label>${objConfig.name} (${objName}):</label>
+                <input type="number" id="minCount_${objName}" value="${objConfig.min_count}" min="0" max="10" style="width: 60px; margin-left: 5px;">
+                <label style="margin-left: 10px;">Display Name:</label>
+                <input type="text" id="displayName_${objName}" value="${objConfig.name}" style="margin-left: 5px;">
+            `;
+            objectConfigsDiv.appendChild(configDiv);
+        }
+    }
+    
+    function updateConfig() {
+        const historyLength = parseInt(document.getElementById('historyLength').value);
+        const alertThreshold = parseInt(document.getElementById('alertThreshold').value);
+        
+        const objectsToTrack = {};
+        for (const [objName, objConfig] of Object.entries(window.currentDetectionConfig?.objects_to_track || {})) {
+            const minCount = parseInt(document.getElementById(`minCount_${objName}`).value);
+            const displayName = document.getElementById(`displayName_${objName}`).value;
+            
+            objectsToTrack[objName] = {
+                class_id: objConfig.class_id,
+                min_count: minCount,
+                name: displayName
+            };
+        }
+        
+        const configData = {
+            history_length: historyLength,
+            alert_threshold: alertThreshold,
+            objects_to_track: objectsToTrack
+        };
+        
+        fetch('/update_detection_config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(configData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error updating configuration: ' + data.error);
+            } else {
+                alert('Configuration updated successfully!');
+                window.currentDetectionConfig = data.new_config;
+                getDetectionStatus(); // Refresh the display
+            }
+        })
+        .catch(error => {
+            console.error('Error updating configuration:', error);
+            alert('Error updating configuration: ' + error.message);
+        });
+    }
+    
+    // Auto-refresh video info and detection every 2 seconds
     setInterval(getVideoInfo, 5000);
+    setInterval(getDetectionStatus, 2000);
 </script>
 
 </body>
