@@ -33,9 +33,9 @@ async def video_stream(websocket):
 
                 
         if target_detected:
-            requests.get("http://localhost:5000/test-alert")
+            requests.get("http://10.113.114.118:5000/test-alert")
         else:
-            requests.get("http://localhost:5000/test-alert-relief")
+            requests.get("http://10.113.114.118:5000/test-alert-relief")
 
         
         # Display frame
@@ -52,7 +52,7 @@ async def video_stream(websocket):
     cap.release()
 
 async def main():
-    async with websockets.serve(video_stream, "127.0.0.1", 8888):
+    async with websockets.serve(video_stream, "10.113.114.118", 8888):
         print("WebSocket server started on ws://10.113.114.118:8888")
         await asyncio.Future()  # Run forever
 
