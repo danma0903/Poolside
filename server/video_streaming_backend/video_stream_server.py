@@ -23,7 +23,7 @@ async def video_stream(websocket):
     cap.release()
 
 async def main():
-    async with websockets.serve(video_stream, "10.113.114.118", 8888):
+    async with websockets.serve(video_stream, "10.0.0.119", 8888):
         print("WebSocket server started on ws://10.113.114.118:8888")
         await asyncio.Future()  # Run forever
 

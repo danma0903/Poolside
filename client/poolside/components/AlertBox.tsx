@@ -3,9 +3,7 @@ import { AppState, Text } from "react-native";
 import EventSource, { EventSourceListener } from "react-native-sse";
 
 type AlertEvent = "alert" | "relieve-alert";
-const es = new EventSource<AlertEvent>(
-	"http://10.113.114.118:5000/alert-stream"
-);
+const es = new EventSource<AlertEvent>("http://10.0.0.119:5000/alert-stream");
 export default function AlertBox() {
 	const [alertText, setAlertText] = useState("no alert");
 	useEffect(() => {

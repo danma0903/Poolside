@@ -7,6 +7,7 @@ import {
 	TextInputSubmitEditingEventData,
 	Animated,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { storeData, getStreamURL } from "@/utils/localStorage";
 import { useEffect, useState, useRef } from "react";
 // import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -57,25 +58,46 @@ export default function Index() {
 					flex: 1,
 					justifyContent: "center",
 					alignItems: "center",
-					backgroundColor: "#90cde4ff",
+					// 	backgroundColor: "#5bbde1ff",
 				}}
 			>
-				<Animated.View
-					style={{
-						flex: 1,
-						justifyContent: "center",
-						alignItems: "center",
-						backgroundColor: "#90cde4ff",
-						opacity: fadeInAnim,
-					}}
+				<LinearGradient
+					colors={["#3d6d80ff", "#074a5cff", "#074a5cff", "#3c7e98ff"]}
+					locations={[0, 0.3, 0.8, 1]}
+					start={{ x: 0.5, y: 0 }}
+					end={{ x: 0.5, y: 1 }}
+					style={styles.gradient}
 				>
-					<TextInput
-						style={styles.inputBox}
-						defaultValue={text}
-						placeholder="type your RTSP/ stream URL"
-						onSubmitEditing={(event) => handleRTSPInput(event, router)}
-					></TextInput>
-				</Animated.View>
+					<Animated.View
+						style={{
+							flex: 1,
+							// justifyContent: "center",
+							alignItems: "center",
+							opacity: fadeInAnim,
+							width: "100%",
+						}}
+					>
+						<View
+							style={{
+								width: "65%",
+								alignItems: "center",
+								paddingBottom: "15%",
+								paddingTop: "70%",
+							}}
+						>
+							<Text style={styles.h1}>Poolside</Text>
+							<Text style={styles.slogan}>
+								Using Computer Vision to Make Pools Safer for Your Kids.
+							</Text>
+						</View>
+						<TextInput
+							style={styles.inputBox}
+							defaultValue={text}
+							placeholder="type your RTSP/ stream URL"
+							onSubmitEditing={(event) => handleRTSPInput(event, router)}
+						></TextInput>
+					</Animated.View>
+				</LinearGradient>
 			</View>
 		);
 	}
@@ -100,10 +122,11 @@ const handleRTSPInput = async (
 		},
 		body: JSON.stringify({ streamURL: text }),
 	};
-	await fetch("http://10.113.114.118:5000/get-stream-url", payload)
+	await fetch("http://10.0.0.119:5000/get-stream-url", payload)
 		.then((response) => console.log(response))
 		.catch((error) => console.log(error));
 	await storeData(text);
+	console.log("go to next page");
 	if (text) router.push("./video-preview");
 	//we might want to add here a validator to make sure we actually can establish a connection
 	//before navigating to the next route. We might render an error on the page
@@ -114,14 +137,42 @@ const handleRTSPInput = async (
 
 const styles = StyleSheet.create({
 	inputBox: {
-		backgroundColor: "#d2d2d2ff",
+		backgroundColor: "rgba(249, 249, 249, 0.8)",
 		borderColor: "black",
-		borderWidth: 1,
+		borderWidth: 0.5,
 		borderRadius: 10,
 		paddingLeft: 10,
 		paddingRight: 10,
 		height: 50,
-		width: 200,
+		width: "60%",
 		fontSize: 12,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.25,
+		shadowRadius: 3.84,
+	},
+	h1: {
+		fontSize: 60,
+		fontWeight: "bold",
+		fontFamily: "System",
+		color: "white",
+	},
+	gradient: {
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		width: "100%",
+	},
+	slogan: {
+		color: "white",
+		fontFamily: "Arial",
+		fontSize: 18,
+		fontWeight: "400",
+		textAlign: "left",
+		lineHeight: 24,
+		maxWidth: "80%",
+		alignSelf: "flex-start",
+		paddingLeft: "5%",
+		paddingRight: "5%",
 	},
 });
