@@ -25,7 +25,7 @@ DETECTION_CONFIG = {
     'history_length': 5,  # Number of frames to track
     'alert_threshold': 1,  # Alert if threshold met in this many frames
     'objects_to_track': {
-        'person': {'class_id': 0, 'min_count': 2, 'name': 'People'},
+        'person': {'class_id': 0, 'min_count': 1, 'name': 'People'},
         'chair': {'class_id': 56, 'min_count': 0, 'name': 'Chairs'},  # COCO class 56
         'cell phone': {'class_id': 67, 'min_count': 1, 'name': 'Cell Phones'}  # COCO class 67
     }
@@ -103,33 +103,86 @@ def get_video_frames():
     """Generator function to yield YOLO-processed frames as JPEG bytes"""
     global video_capture, streaming_active
     
-    video_capture = cv2.VideoCapture(0) # the camera or video file ###########################################################
+    def initialize_camera():
+        """Initialize camera with proper configuration"""
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            print("Error: Could not open camera")
+            return None
+        
+        # Configure camera settings for better stability
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap.set(cv2.CAP_PROP_FPS, 30)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Reduce buffer to minimize delay
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)   # Enable autofocus
+        
+        print(f"Camera initialized: {cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{cap.get(cv2.CAP_PROP_FRAME_HEIGHT)} @ {cap.get(cv2.CAP_PROP_FPS)} FPS")
+        return cap
+    
+    video_capture = initialize_camera()
+    if video_capture is None:
+        print("Failed to initialize camera")
+        return
+    
     streaming_active = True
+    consecutive_failures = 0
+    max_failures = 10  # Maximum consecutive read failures before reconnecting
 
     try:
-        while streaming_active and video_capture.isOpened():
+        while streaming_active:
+            if video_capture is None or not video_capture.isOpened():
+                print("Camera not available, attempting to reconnect...")
+                video_capture = initialize_camera()
+                if video_capture is None:
+                    time.sleep(1)  # Wait before retrying
+                    continue
+                consecutive_failures = 0
+            
             ret, frame = video_capture.read()
             if not ret:
-                # Restart video when it ends
-                video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                consecutive_failures += 1
+                print(f"Failed to read frame (attempt {consecutive_failures}/{max_failures})")
+                
+                if consecutive_failures >= max_failures:
+                    print("Too many consecutive failures, reconnecting camera...")
+                    video_capture.release()
+                    video_capture = None
+                    consecutive_failures = 0
+                    time.sleep(0.5)  # Brief pause before reconnecting
                 continue
+            
+            # Reset failure counter on successful read
+            consecutive_failures = 0
 
             # ✅ Apply YOLO model
-            annotated_frame = process_frame(frame)
+            try:
+                annotated_frame = process_frame(frame)
+            except Exception as e:
+                print(f"Error processing frame: {e}")
+                annotated_frame = frame  # Use original frame if processing fails
 
             # Encode as JPEG
-            _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-            frame_bytes = buffer.tobytes()
+            try:
+                _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                frame_bytes = buffer.tobytes()
 
-            # Stream the annotated frame
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-            time.sleep(1/60)  # the video is 120 fps so we need to sleep for 1/120 seconds to maintain the fps
+                # Stream the annotated frame
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            except Exception as e:
+                print(f"Error encoding frame: {e}")
+                continue
+            
+            time.sleep(1/30)  # Target 30 FPS for better stability
 
+    except Exception as e:
+        print(f"Error in video stream: {e}")
     finally:
         if video_capture:
             video_capture.release()
         streaming_active = False
+        print("Video stream stopped")
 
 
 @app.route('/')
@@ -181,6 +234,43 @@ def stop_video():
         video_capture = None
     
     return jsonify({"message": "Video stream stopped"})
+
+
+@app.route('/camera_health')
+def camera_health():
+    """Check camera health and connection status"""
+    global video_capture, streaming_active
+    
+    if video_capture is None:
+        return jsonify({
+            "status": "disconnected",
+            "message": "Camera not initialized",
+            "streaming_active": streaming_active
+        })
+    
+    if not video_capture.isOpened():
+        return jsonify({
+            "status": "disconnected", 
+            "message": "Camera connection lost",
+            "streaming_active": streaming_active
+        })
+    
+    # Try to read a test frame
+    ret, frame = video_capture.read()
+    if not ret:
+        return jsonify({
+            "status": "error",
+            "message": "Camera read failed",
+            "streaming_active": streaming_active
+        })
+    
+    return jsonify({
+        "status": "healthy",
+        "message": "Camera working properly",
+        "streaming_active": streaming_active,
+        "resolution": f"{int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))}x{int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))}",
+        "fps": video_capture.get(cv2.CAP_PROP_FPS)
+    })
 
 
 @app.route('/detection_status')

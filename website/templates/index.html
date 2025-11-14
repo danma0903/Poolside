@@ -103,6 +103,7 @@
             <button id="startBtn" onclick="startStream()">Start Stream</button>
             <button id="stopBtn" onclick="stopStream()" disabled>Stop Stream</button>
             <button onclick="getVideoInfo()">Get Video Info</button>
+            <button onclick="checkCameraHealth()">Check Camera Health</button>
         </div>
         
         <div class="info">
@@ -135,6 +136,7 @@
         <ul>
             <li><strong>GET /video_stream</strong> - Stream video as MJPEG</li>
             <li><strong>GET /video_info</strong> - Get video stream information</li>
+            <li><strong>GET /camera_health</strong> - Check camera health and connection status</li>
             <li><strong>GET /stop_video</strong> - Stop the video stream</li>
             <li><strong>GET /detection_status</strong> - Get object detection status and alerts</li>
             <li><strong>POST /update_detection_config</strong> - Update detection configuration</li>
@@ -203,6 +205,19 @@
                 console.error('Error fetching video info:', error);
                 document.getElementById('status').textContent = 'Error';
                 document.getElementById('status').className = 'status inactive';
+            });
+    }
+    
+    function checkCameraHealth() {
+        fetch('/camera_health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Camera Health:', data);
+                alert(`Camera Status: ${data.status}\nMessage: ${data.message}\nStreaming: ${data.streaming_active ? 'Yes' : 'No'}\nResolution: ${data.resolution || 'N/A'}\nFPS: ${data.fps || 'N/A'}`);
+            })
+            .catch(error => {
+                console.error('Error checking camera health:', error);
+                alert('Error checking camera health: ' + error.message);
             });
     }
     
